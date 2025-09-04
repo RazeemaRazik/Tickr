@@ -1,12 +1,13 @@
 import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
-import { createStackNavigator } from "@react-navigation/stack";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 import SplashScreen from "./src/screens/SplashScreen";
 import SignInScreen from "./src/screens/SignInScreen";
 import SignUpScreen from "./src/screens/SignUpScreen";
 import HomeScreen from "./src/screens/HomeScreen";
 
+// Define navigation param types
 export type RootStackParamList = {
   Splash: undefined;
   SignIn: undefined;
@@ -14,14 +15,14 @@ export type RootStackParamList = {
   Home: undefined;
 };
 
-const Stack = createStackNavigator<RootStackParamList>();
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
-const App: React.FC = () => {
+export default function App () {
   return (
     <NavigationContainer>
       <Stack.Navigator
         initialRouteName="Splash"
-        screenOptions={{ headerShown: false }} // hide headers for clean UI
+        screenOptions={{ headerShown: false }} // Hide headers for clean UI
       >
         <Stack.Screen name="Splash" component={SplashScreen} />
         <Stack.Screen name="SignIn" component={SignInScreen} />
@@ -32,4 +33,3 @@ const App: React.FC = () => {
   );
 };
 
-export default App;
