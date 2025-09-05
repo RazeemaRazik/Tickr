@@ -16,6 +16,7 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../../App";
+import { Ionicons } from "@expo/vector-icons";
 
 type NavigationProps = NativeStackNavigationProp<RootStackParamList, "SignIn">;
 
@@ -23,6 +24,7 @@ const SignInScreen = () => {
     const navigator = useNavigation<NavigationProps>();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
 
     const handleSignIn = () => {
         if (!email || !password) {
@@ -65,25 +67,40 @@ const SignInScreen = () => {
                             value={email}
                             onChangeText={setEmail}
                         />
-                        <TextInput
-                            placeholder="Password"
-                            placeholderTextColor="#fff"
-                            style={styles.input}
-                            secureTextEntry
-                            value={password}
-                            onChangeText={setPassword}
-                        />
+
+                        {/* Password with eye toggle */}
+                        <View style={styles.passwordContainer}>
+                            <TextInput
+                                placeholder="Password"
+                                placeholderTextColor="#fff"
+                                style={styles.passwordInput}
+                                secureTextEntry={!showPassword}
+                                value={password}
+                                onChangeText={setPassword}
+                            />
+                            <TouchableOpacity
+                                onPress={() => setShowPassword(!showPassword)}
+                                style={styles.eyeIcon}
+                            >
+                                <Ionicons
+                                    name={showPassword ? "eye-off" : "eye"}
+                                    size={22}
+                                    color="#fff"
+                                />
+                            </TouchableOpacity>
+                        </View>
                     </View>
 
                     {/* Forgot password */}
-                    <TouchableOpacity
-                        onPress={() => Alert.alert("Forgot Password", "Feature coming soon")}
-                    >
-                        <Text style={styles.forgotText}>Forgot Password?</Text>
+                    <TouchableOpacity onPress={() => navigator.navigate("ForgotPassword")}>
+                        <Text style={styles.forgotText}>
+                            Forgot Password?
+                        </Text>
                     </TouchableOpacity>
 
+
                     {/* Sign In Button */}
-                    <TouchableOpacity style={styles.button} onPress={handleSignIn}>
+                    <TouchableOpacity style={styles.button} onPress={() => navigator.navigate("Home")}>
                         <Text style={styles.buttonText}>Sign In</Text>
                     </TouchableOpacity>
 
@@ -97,7 +114,6 @@ const SignInScreen = () => {
                 </ScrollView>
             </KeyboardAvoidingView>
         </SafeAreaView>
-
     );
 };
 
@@ -110,10 +126,10 @@ const styles = StyleSheet.create({
     },
     scrollContainer: {
         flexGrow: 1,
-        justifyContent: "center", 
+        justifyContent: "center",
         alignItems: "center",
         padding: 20,
-        paddingBottom: 10, 
+        paddingBottom: 10,
     },
     logoContainer: {
         justifyContent: "center",
@@ -139,6 +155,24 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
         borderRadius: 10,
         marginBottom: 16,
+    },
+    passwordContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        width: "100%",
+        backgroundColor: "#80521c",
+        borderRadius: 10,
+        marginBottom: 16,
+        paddingRight: 10,
+    },
+    passwordInput: {
+        flex: 1,
+        color: "#fff",
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+    },
+    eyeIcon: {
+        padding: 5,
     },
     forgotText: {
         alignSelf: "flex-end",
