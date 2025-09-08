@@ -14,18 +14,25 @@ import ViewTaskScreen from "./src/screens/ViewTaskScreen";
 import EditTaskScreen from "./src/screens/EditTaskScreen";
 import ProfileScreen from "./src/screens/ProfileScreen";
 
-// Define navigation param types
+export type Task = {
+  id: string;
+  title: string;
+  description: string;
+  dueDate: string;
+  status: "Pending"| "In Progress"| "Completed";
+};
+
 export type RootStackParamList = {
   Splash: undefined;
   SignIn: undefined;
   SignUp: undefined;
   Home: undefined;
   ForgotPassword: undefined;
-  VerificationCode: undefined;
-  ResetPassword: undefined;
+  VerificationCode: {email: String};
+  ResetPassword: {email: String};
   AddTask: undefined;
-  EditTask: { title : string, dueDate: string, description: string, status: string  };
-  ViewTask: { title : string, dueDate: string, description: string, status: string };
+  EditTask: { task: Task };  
+  ViewTask: { task: Task };
   Profile: undefined;
 };
 

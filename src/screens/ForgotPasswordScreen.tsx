@@ -15,6 +15,7 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../../App";
+import { ALERT_TYPE, AlertNotificationRoot, Dialog } from "react-native-alert-notification";
 
 type NavigationProps = NativeStackNavigationProp<
     RootStackParamList,
@@ -23,20 +24,12 @@ type NavigationProps = NativeStackNavigationProp<
 
 const ForgotPasswordScreen = () => {
     const navigator = useNavigation<NavigationProps>();
-    const [email, setEmail] = useState("");
+    const [getEmail, setEmail] = useState("");
 
-    const handleSendCode = () => {
-        if (!email) {
-            Alert.alert("Error", "Please enter your email");
-            return;
-        }
-        // In real app → API call here
-        Alert.alert("Success", "Verification code sent to your email");
-        navigator.navigate("VerificationCode");
-    };
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: "#2d1406" }}>
+        <AlertNotificationRoot>
+            <SafeAreaView style={{ flex: 1, backgroundColor: "#2d1406" }}>
             <StatusBar barStyle="light-content" backgroundColor="#2d1406" translucent />
             <KeyboardAvoidingView
                 style={styles.container}
@@ -54,16 +47,57 @@ const ForgotPasswordScreen = () => {
                         style={styles.input}
                         keyboardType="email-address"
                         autoCapitalize="none"
-                        value={email}
+                        value={getEmail}
                         onChangeText={setEmail}
                     />
 
-                    <TouchableOpacity style={styles.button} onPress={handleSendCode}>
+                    <TouchableOpacity style={styles.button} onPress={async() => {
+                                    
+                                    let formData = new FormData();
+                                    formData.append('email', getEmail);
+
+                                    const response = await fetch('https://2779e16733c2.ngrok-free.app/Tickr/ForgotPassword', {
+                                        method: 'POST',
+                                        body: formData,
+                                        headers: {
+                                            'Content-Type': 'multipart/form-data',
+                                        }
+                                    });
+
+                                    if (response.ok) {
+                                        const json = await response.json();
+                                        if (json.status) {
+                                            console.log(json.message);
+                                            Dialog.show({
+                                                type: ALERT_TYPE.SUCCESS,
+                                                title: 'Success',
+                                                textBody: json.message,
+                                                button: 'close',
+                                            });
+                                            navigator.navigate("VerificationCode", { email: getEmail });
+                                        } else {
+                                            Dialog.show({
+                                            type: ALERT_TYPE.DANGER,
+                                            title: 'ERROR',
+                                            textBody: json.message,
+                                            button: 'close',
+                                        });
+                                        }
+                                    } else {
+                                        Dialog.show({
+                                            type: ALERT_TYPE.DANGER,
+                                            title: 'ERROR',
+                                            textBody: 'Failed to create account',
+                                            button: 'close',
+                                        });
+                                    }
+                                }}>
                         <Text style={styles.buttonText}>Send Code</Text>
                     </TouchableOpacity>
                 </ScrollView>
             </KeyboardAvoidingView>
         </SafeAreaView>
+        </AlertNotificationRoot>
     );
 };
 

@@ -13,7 +13,7 @@ import {
     ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../../App";
 
@@ -24,12 +24,13 @@ type NavigationProps = NativeStackNavigationProp<
 
 const ResetPasswordScreen = () => {
     const navigator = useNavigation<NavigationProps>();
+    const route = useRoute<any>(); 
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-    const handleReset = () => {
+    const handleReset = async () => {
         if (!password || !confirmPassword) {
             Alert.alert("Error", "Please fill in both fields");
             return;
@@ -38,8 +39,36 @@ const ResetPasswordScreen = () => {
             Alert.alert("Error", "Passwords do not match");
             return;
         }
-        Alert.alert("Success", "Password reset successfully!");
-        navigator.replace("SignIn");
+
+        try {
+            let formData = new FormData();
+            formData.append("email", route.params.email); 
+            formData.append("password", password);
+
+            const response = await fetch(
+                "https://2779e16733c2.ngrok-free.app/Tickr/ResetPassword",
+                {
+                    method: "POST",
+                    body: formData,
+                }
+            );
+
+            const json = await response.json();
+
+            if (json.status) {
+                Alert.alert("Success", json.message, [
+                    {
+                        text: "OK",
+                        onPress: () => navigator.replace("SignIn"),
+                    },
+                ]);
+            } else {
+                Alert.alert("Error", json.message);
+            }
+        } catch (error) {
+            console.error("Error:", error);
+            Alert.alert("Error", "Something went wrong, please try again.");
+        }
     };
 
     return (
@@ -86,7 +115,9 @@ const ResetPasswordScreen = () => {
                             onChangeText={setConfirmPassword}
                         />
                         <TouchableOpacity
-                            onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                            onPress={() =>
+                                setShowConfirmPassword(!showConfirmPassword)
+                            }
                             style={styles.eyeIcon}
                         >
                             <Ionicons

@@ -12,7 +12,7 @@ import {
     ScrollView,
     Alert,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../../App";
 
@@ -23,15 +23,8 @@ type NavigationProps = NativeStackNavigationProp<
 
 const VerificationCodeScreen = () => {
     const navigator = useNavigation<NavigationProps>();
+    const route = useRoute<any>();
     const [code, setCode] = useState("");
-
-    const handleVerify = () => {
-        if (code === "1234") {
-            navigator.navigate("ResetPassword");
-        } else {
-            Alert.alert("Invalid Code", "Please try again");
-        }
-    };
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: "#2d1406" }}>
@@ -56,12 +49,63 @@ const VerificationCodeScreen = () => {
                         onChangeText={setCode}
                     />
 
-                    <TouchableOpacity style={styles.button} onPress={handleVerify}>
+                    <TouchableOpacity
+                        style={styles.button}
+                        onPress={async () => {
+                            let formData = new FormData();
+                            formData.append("email", route.params.email);
+                            formData.append("code", code);
+
+                            const response = await fetch(
+                                "https://2779e16733c2.ngrok-free.app/Tickr/VerifyCode",
+                                {
+                                    method: "POST",
+                                    body: formData,
+                                }
+                            );
+
+                            const json = await response.json();
+
+                            if (json.status) {
+                                navigator.navigate("ResetPassword", {
+                                    email: route.params.email,
+                                });
+                            } else {
+                                Alert.alert("Error", json.message);
+                            }
+                        }}
+                    >
                         <Text style={styles.buttonText}>Verify Code</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity onPress={() => Alert.alert("Resend", "Code resent!")}>
-                        <Text style={styles.resendText}>Didn’t get the code? Resend</Text>
+                    <TouchableOpacity
+                        onPress={async () => {
+                            let formData = new FormData();
+                            formData.append("email", route.params.email);
+
+                            try {
+                                const response = await fetch(
+                                    "https://2779e16733c2.ngrok-free.app/Tickr/ForgotPassword",
+                                    {
+                                        method: "POST",
+                                        body: formData,
+                                    }
+                                );
+
+                                const json = await response.json();
+                                if (json.status) {
+                                    Alert.alert("Success", "New verification code sent to your email!");
+                                } else {
+                                    Alert.alert("Error", json.message);
+                                }
+                            } catch (err) {
+                                Alert.alert("Error", "Something went wrong while resending code.");
+                            }
+                        }}
+                    >
+                        <Text style={styles.resendText}>
+                            Didn’t get the code? Resend
+                        </Text>
                     </TouchableOpacity>
                 </ScrollView>
             </KeyboardAvoidingView>
