@@ -36,7 +36,7 @@ export default function App() {
     <NavigationContainer>
       <Stack.Navigator
         initialRouteName="Splash"
-        screenOptions={{ headerShown: false }} // Hide headers for clean UI
+        screenOptions={{ headerShown: false }} // Hide headers
       >
         <Stack.Screen name="Splash" component={SplashScreen}/>
         <Stack.Screen name="SignIn" component={SignInScreen} />
@@ -44,7 +44,6 @@ export default function App() {
         <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
         <Stack.Screen name="VerificationCode" component={VerificationCodeScreen} />
         <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
-
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="AddTask" component={AddTaskScreen} />
         <Stack.Screen name="EditTask" component={EditTaskScreen} />

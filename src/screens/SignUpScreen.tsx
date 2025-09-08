@@ -18,181 +18,218 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../../App";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
+import { ALERT_TYPE, Dialog, AlertNotificationRoot, Toast } from 'react-native-alert-notification';
 
 type NavigationProps = NativeStackNavigationProp<RootStackParamList, "SignUp">;
 
-const SignUpScreen = () => {
+export default function SignUpScreen() {
     const navigator = useNavigation<NavigationProps>();
 
-    const [fullName, setFullName] = useState("");
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [confirmPassword, setConfirmPassword] = useState("");
-    const [imageUri, setImageUri] = useState<string | null>(null);
+    const [getName, setName] = useState("");
+    const [getEmail, setEmail] = useState("");
+    const [getPassword, setPassword] = useState("");
+    const [getConfirmPassword, setConfirmPassword] = useState("");
+    const [getImageUri, setImageUri] = useState<string | null>(null);
 
-    const [showPassword, setShowPassword] = useState(false);
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [getShowPassword, setShowPassword] = useState(false);
+    const [getShowConfirmPassword, setShowConfirmPassword] = useState(false);
 
-    const handlePickImage = async () => {
-        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (status !== "granted") {
-            Alert.alert("Permission denied", "Please allow access to gallery.");
-            return;
-        }
+    const pickImage = async () => {
+  console.log("Picking Image...");
 
-        const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images, 
-            quality: 1,
-        });
+  const result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ImagePicker.MediaTypeOptions.Images, // ✅ fix
+    allowsEditing: true,
+    aspect: [4, 3],
+    quality: 1,
+  });
 
+  if (!result.canceled) {
+    const uri = result.assets[0].uri;
+    setImageUri(uri);
+    console.log("Image URI:", uri); // ✅ log the actual selected image
+  }
+};
 
-        if (!result.canceled) {
-            setImageUri(result.assets[0].uri);
-        }
-    };
 
     const handleRemoveImage = () => {
         setImageUri(null);
     };
 
-    const validateAndSignUp = () => {
-        if (!fullName || !email || !password || !confirmPassword) {
-            Alert.alert("Error", "Please fill in all fields.");
-            return;
-        }
-        if (!/\S+@\S+\.\S+/.test(email)) {
-            Alert.alert("Error", "Please enter a valid email.");
-            return;
-        }
-        if (password !== confirmPassword) {
-            Alert.alert("Error", "Passwords do not match.");
-            return;
-        }
-
-        console.log("Sign Up Data:", { fullName, email, password, imageUri });
-        Alert.alert("Success", "Account created!");
-        navigator.replace("Home");
-    };
+    
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: "#2d1406" }}>
-            <StatusBar
-                barStyle="light-content"
-                backgroundColor="#2d1406"
-                translucent={true}
-            />
-            <KeyboardAvoidingView
-                style={styles.container}
-                behavior={Platform.OS === "ios" ? "padding" : "height"}
-                keyboardVerticalOffset={Platform.OS === "ios" ? 50 : 20}
-            >
-                <ScrollView
-                    contentContainerStyle={styles.scrollContainer}
-                    keyboardShouldPersistTaps="handled"
+        <AlertNotificationRoot>
+            <SafeAreaView style={{ flex: 1, backgroundColor: "#2d1406" }}>
+                <StatusBar
+                    barStyle="light-content"
+                    backgroundColor="#2d1406"
+                    translucent={true}
+                />
+                <KeyboardAvoidingView
+                    style={styles.container}
+                    behavior={Platform.OS === "ios" ? "padding" : "height"}
+                    keyboardVerticalOffset={Platform.OS === "ios" ? 50 : 20}
                 >
-                    {/* Profile Image with Floating Icon */}
-                    <View style={styles.imageWrapper}>
-                        <TouchableOpacity style={styles.imagePicker} onPress={handlePickImage}>
-                            {imageUri ? (
-                                <Image source={{ uri: imageUri }} style={styles.profileImage} />
-                            ) : (
-                                <Ionicons name="person-circle-outline" size={150} color="#bd802e" />
-                            )}
-                        </TouchableOpacity>
+                    <ScrollView
+                        contentContainerStyle={styles.scrollContainer}
+                        keyboardShouldPersistTaps="handled"
+                    >
+                        {/* Profile Image with Floating Icon */}
+                        <View style={styles.imageWrapper}>
+                            <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
+                                {getImageUri ? (
+                                    <Image source={{ uri: getImageUri }} style={styles.profileImage} />
+                                ) : (
+                                    <Ionicons name="person-circle-outline" size={150} color="#bd802e" />
+                                )}
+                            </TouchableOpacity>
 
-                        <TouchableOpacity
-                            style={styles.floatingIcon}
-                            onPress={imageUri ? handleRemoveImage : handlePickImage}
-                        >
-                            <Ionicons
-                                name={imageUri ? "close-circle" : "pencil"}
-                                size={28}
-                                color="#fff"
-                            />
-                        </TouchableOpacity>
-                    </View>
+                            <TouchableOpacity
+                                style={styles.floatingIcon}
+                                onPress={getImageUri ? handleRemoveImage : pickImage}
+                            >
+                                <Ionicons
+                                    name={getImageUri ? "close-circle" : "pencil"}
+                                    size={28}
+                                    color="#fff"
+                                />
+                            </TouchableOpacity>
+                        </View>
 
-                    {/* Input Fields */}
-                    <TextInput
-                        placeholder="Full Name"
-                        placeholderTextColor="#fff"
-                        style={styles.input}
-                        value={fullName}
-                        onChangeText={setFullName}
-                    />
-                    <TextInput
-                        placeholder="Email"
-                        placeholderTextColor="#fff"
-                        style={styles.input}
-                        keyboardType="email-address"
-                        autoCapitalize="none"
-                        value={email}
-                        onChangeText={setEmail}
-                    />
-
-                    {/* Password Input */}
-                    <View style={styles.passwordContainer}>
+                        {/* Input Fields */}
                         <TextInput
-                            placeholder="Password"
+                            placeholder="Full Name"
                             placeholderTextColor="#fff"
-                            style={styles.passwordInput}
-                            secureTextEntry={!showPassword}
-                            value={password}
-                            onChangeText={setPassword}
+                            style={styles.input}
+                            value={getName}
+                            onChangeText={setName}
                         />
-                        <TouchableOpacity
-                            onPress={() => setShowPassword(!showPassword)}
-                            style={styles.eyeIcon}
-                        >
-                            <Ionicons
-                                name={showPassword ? "eye-off" : "eye"}
-                                size={22}
-                                color="#fff"
-                            />
-                        </TouchableOpacity>
-                    </View>
-
-                    {/* Confirm Password Input */}
-                    <View style={styles.passwordContainer}>
                         <TextInput
-                            placeholder="Confirm Password"
+                            placeholder="Email"
                             placeholderTextColor="#fff"
-                            style={styles.passwordInput}
-                            secureTextEntry={!showConfirmPassword}
-                            value={confirmPassword}
-                            onChangeText={setConfirmPassword}
+                            style={styles.input}
+                            keyboardType="email-address"
+                            autoCapitalize="none"
+                            value={getEmail}
+                            onChangeText={setEmail}
                         />
-                        <TouchableOpacity
-                            onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                            style={styles.eyeIcon}
-                        >
-                            <Ionicons
-                                name={showConfirmPassword ? "eye-off" : "eye"}
-                                size={22}
-                                color="#fff"
+
+                        {/* Password Input */}
+                        <View style={styles.passwordContainer}>
+                            <TextInput
+                                placeholder="Password"
+                                placeholderTextColor="#fff"
+                                style={styles.passwordInput}
+                                secureTextEntry={!getShowPassword}
+                                value={getPassword}
+                                onChangeText={setPassword}
                             />
-                        </TouchableOpacity>
-                    </View>
+                            <TouchableOpacity
+                                onPress={() => setShowPassword(!getShowPassword)}
+                                style={styles.eyeIcon}
+                            >
+                                <Ionicons
+                                    name={getShowPassword ? "eye-off" : "eye"}
+                                    size={22}
+                                    color="#fff"
+                                />
+                            </TouchableOpacity>
+                        </View>
 
-                    {/* Sign Up Button */}
-                    <TouchableOpacity style={styles.button} onPress={validateAndSignUp}>
-                        <Text style={styles.buttonText}>Sign Up</Text>
-                    </TouchableOpacity>
+                        {/* Confirm Password Input */}
+                        <View style={styles.passwordContainer}>
+                            <TextInput
+                                placeholder="Confirm Password"
+                                placeholderTextColor="#fff"
+                                style={styles.passwordInput}
+                                secureTextEntry={!getShowConfirmPassword}
+                                value={getConfirmPassword}
+                                onChangeText={setConfirmPassword}
+                            />
+                            <TouchableOpacity
+                                onPress={() => setShowConfirmPassword(!getShowConfirmPassword)}
+                                style={styles.eyeIcon}
+                            >
+                                <Ionicons
+                                    name={getShowConfirmPassword ? "eye-off" : "eye"}
+                                    size={22}
+                                    color="#fff"
+                                />
+                            </TouchableOpacity>
+                        </View>
 
-                    {/* Sign In Link */}
-                    <View style={styles.signInContainer}>
-                        <Text style={{ color: "#fff" }}>Already have an account? </Text>
-                        <TouchableOpacity onPress={() => navigator.navigate("SignIn")}>
-                            <Text style={{ color: "#bd802e", fontWeight: "bold" }}>Sign In</Text>
+                        {/* Sign Up Button */}
+                        <TouchableOpacity style={styles.button} onPress={async() => {
+                                    
+                                    let formData = new FormData();
+                                    formData.append('name', getName);
+                                    formData.append('email', getEmail);
+                                    formData.append('password', getPassword);
+                                    formData.append('confirmPassword', getConfirmPassword);
+
+                                    if (getImageUri) {
+                                        formData.append('profileImage', {
+                                            uri: getImageUri,
+                                            name: 'profile.jpg',
+                                            type: 'image/jpeg',
+                                        } as any);
+                                    }
+
+                                    const response = await fetch('https://2779e16733c2.ngrok-free.app/Tickr/SignUp', {
+                                        method: 'POST',
+                                        body: formData,
+                                        headers: {
+                                            'Content-Type': 'multipart/form-data',
+                                        }
+                                    });
+
+                                    if (response.ok) {
+                                        const json = await response.json();
+                                        if (json.status) {
+                                            Dialog.show({
+                                                type: ALERT_TYPE.SUCCESS,
+                                                title: 'Success',
+                                                textBody: json.message,
+                                                button: 'close',
+                                                onHide: () => {
+                                                    navigator.navigate("SignIn");
+                                                }
+                                            });
+                                        } else {
+                                            Dialog.show({
+                                            type: ALERT_TYPE.DANGER,
+                                            title: 'ERROR',
+                                            textBody: json.message,
+                                            button: 'close',
+                                        });
+                                        }
+                                    } else {
+                                        Dialog.show({
+                                            type: ALERT_TYPE.DANGER,
+                                            title: 'ERROR',
+                                            textBody: 'Failed to create account',
+                                            button: 'close',
+                                        });
+                                    }
+                                }}>
+                            <Text style={styles.buttonText}>Sign Up</Text>
                         </TouchableOpacity>
-                    </View>
-                </ScrollView>
-            </KeyboardAvoidingView>
-        </SafeAreaView>
+
+                        {/* Sign In Link */}
+                        <View style={styles.signInContainer}>
+                            <Text style={{ color: "#fff" }}>Already have an account? </Text>
+                            <TouchableOpacity onPress={() => navigator.navigate("SignIn")}>
+                                <Text style={{ color: "#bd802e", fontWeight: "bold" }}>Sign In</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </ScrollView>
+                </KeyboardAvoidingView>
+            </SafeAreaView>
+        </AlertNotificationRoot>
+
     );
 };
-
-export default SignUpScreen;
 
 const styles = StyleSheet.create({
     container: {

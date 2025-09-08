@@ -14,6 +14,7 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 import { RootStackParamList } from "../../App";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 type NavigationProps = NativeStackNavigationProp<RootStackParamList, "Home">;
 
@@ -26,14 +27,26 @@ interface Task {
 
 const HomeScreen = () => {
     const navigator = useNavigation<NavigationProps>();
-    const [tasks, setTasks] = useState<Task[]>([]);
-    const [greeting, setGreeting] = useState("");
+    const [getTasks, setTasks] = useState<Task[]>([]);
+    const [getGreeting, setGreeting] = useState("");
+    const [getUserName, setUserName] = useState("");
+    const [getUserImage, setUserImage] = useState<string | null>(null);
 
     useEffect(() => {
         const hour = new Date().getHours();
         if (hour < 12) setGreeting("Good Morning");
         else if (hour < 18) setGreeting("Good Afternoon");
         else setGreeting("Good Evening");
+
+        (async () => {
+            const storedUser = await AsyncStorage.getItem("user");
+            if (storedUser) {
+                const parsed = JSON.parse(storedUser);
+                setUserName(parsed.name);
+                setUserImage(parsed.image);
+            }
+        })();
+
     }, []);
 
     const toggleTaskCompletion = (id: string) => {
@@ -80,30 +93,39 @@ const HomeScreen = () => {
 
             {/* Header */}
             <View style={styles.header}>
-                <TouchableOpacity 
-                onPress={() => navigator.navigate("Profile")}
-                >
-                    <Ionicons name="person-circle-outline" size={40} color="#bd802e" />
+                <TouchableOpacity onPress={() => navigator.navigate("Profile")}>
+                    {getUserImage ? (
+                        <Image
+                            source={{ uri: `https://2779e16733c2.ngrok-free.app/Tickr/profile_image/${getUserImage}` }}
+                            style={{ width: 40, height: 40, borderRadius: 20 }}
+                        />
+                    ) : (
+                        <Ionicons name="person-circle-outline" size={40} color="#bd802e" />
+                    )}
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Tickr</Text>
-                <TouchableOpacity onPress={() => navigator.replace("SignIn")}>
+                <TouchableOpacity onPress={async () => {
+                    await AsyncStorage.removeItem("user"); // logout
+                    navigator.replace("SignIn");
+                }}>
                     <Ionicons name="log-out-outline" size={28} color="#fff" />
                 </TouchableOpacity>
             </View>
 
+
             {/* Greeting */}
-            <Text style={styles.greeting}>{greeting}, User 👋</Text>
+            <Text style={styles.greeting}>{getGreeting}, {getUserName || "User"} 👋</Text>
 
             {/* Task List */}
             <Text style={styles.sectionTitle}>My Tasks</Text>
-            {tasks.length === 0 ? (
+            {getTasks.length === 0 ? (
                 <View style={styles.emptyContainer}>
                     <Ionicons name="document-text-outline" size={80} color="#80521c" />
                     <Text style={styles.emptyText}>No tasks yet. Add your first task!</Text>
                 </View>
             ) : (
                 <FlatList
-                    data={tasks}
+                    data={getTasks}
                     keyExtractor={(item) => item.id}
                     renderItem={renderTask}
                     contentContainerStyle={{ paddingBottom: 100 }}
