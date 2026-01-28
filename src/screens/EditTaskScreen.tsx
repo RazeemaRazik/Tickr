@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
     View,
     Text,
@@ -14,40 +14,60 @@ import {
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { RootStackParamList } from "../../App";
 
 type EditTaskRouteProp = RouteProp<RootStackParamList, "EditTask">;
 type NavigationProps = NativeStackNavigationProp<RootStackParamList, "EditTask">;
 
+interface Task {
+    id: string;
+    title: string;
+    description: string;
+    dueDate: string;
+    status: "Pending" | "Completed" | "In progress";
+}
+
 const EditTaskScreen = () => {
     const navigation = useNavigation<NavigationProps>();
     const route = useRoute<EditTaskRouteProp>();
-    const { title: initialTitle, dueDate: initialDueDate, description: initialDescription, status: initialStatus } =
-        route.params || {
-            title: "",
-            dueDate: new Date().toDateString(),
-            description: "",
-            status: "Pending",
-        };
+    const { task } = route.params as { task: Task };
 
-    const [title, setTitle] = useState(initialTitle);
-    const [description, setDescription] = useState(initialDescription);
-    const [dueDate, setDueDate] = useState<Date>(new Date(initialDueDate));
+    const [title, setTitle] = useState(task?.title || "");
+    const [description, setDescription] = useState(task?.description || "");
+    const [dueDate, setDueDate] = useState<Date>(task?.dueDate ? new Date(task.dueDate) : new Date());
     const [showDatePicker, setShowDatePicker] = useState(false);
-    const [status, setStatus] = useState(initialStatus);
+    const [status, setStatus] = useState<Task["status"]>(task?.status || "pending");
 
-    const handleSave = () => {
+    const statusOptions: Task["status"][] = ["Pending", "In progress", "Completed"];
+
+    // Save the edited task
+    const handleSave = async () => {
         if (!title || !dueDate) {
             Alert.alert("Error", "Task title and due date cannot be empty");
             return;
         }
 
-        console.log("Updated Task:", { title, description, dueDate: dueDate.toDateString(), status });
-        Alert.alert("Success", "Task updated!");
-        navigation.goBack();
-    };
+        try {
+            const storedTasks = await AsyncStorage.getItem("tasks");
+            const parsedTasks: Task[] = storedTasks ? JSON.parse(storedTasks) : [];
 
-    const statusOptions = ["Pending", "In Progress", "Completed"];
+            // Replace the edited task
+            const updatedTasks = parsedTasks.map((t) =>
+                t.id === task.id
+                    ? { ...t, title, description, dueDate: dueDate.toDateString(), status }
+                    : t
+            );
+
+            await AsyncStorage.setItem("tasks", JSON.stringify(updatedTasks));
+
+            Alert.alert("Success", "Task updated!");
+            navigation.goBack();
+        } catch (error) {
+            console.error("Error updating task:", error);
+            Alert.alert("Error", "Failed to update task");
+        }
+    };
 
     return (
         <SafeAreaView style={styles.container}>
@@ -118,7 +138,7 @@ const EditTaskScreen = () => {
                                         status === option && { color: "#2d1406", fontWeight: "bold" },
                                     ]}
                                 >
-                                    {option}
+                                    {option.charAt(0).toUpperCase() + option.slice(1)}
                                 </Text>
                             </TouchableOpacity>
                         ))}

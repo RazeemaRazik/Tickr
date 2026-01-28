@@ -15,27 +15,47 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { RootStackParamList } from "../../App";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 type NavigationProps = NativeStackNavigationProp<RootStackParamList, "AddTask">;
 
 const AddTaskScreen = () => {
     const navigator = useNavigation<NavigationProps>();
-    const [title, setTitle] = useState("");
-    const [description, setDescription] = useState("");
-    const [dueDate, setDueDate] = useState<Date | null>(null);
-    const [showDatePicker, setShowDatePicker] = useState(false);
+    const [getTitle, setTitle] = useState("");
+    const [getDescription, setDescription] = useState("");
+    const [getDueDate, setDueDate] = useState<Date | null>(null);
+    const [getShowDatePicker, setShowDatePicker] = useState(false);
 
-    const handleSaveTask = () => {
-        if (!title || !dueDate) {
+    const handleSaveTask = async () => {
+        if (!getTitle || !getDueDate) {
             Alert.alert("Error", "Please enter a task title and due date.");
             return;
         }
 
-        // You can integrate with state management / backend later
-        console.log("New Task:", { title, dueDate: dueDate.toDateString() });
+        try {
+            const newTask = {
+                id: Date.now().toString(), // unique id
+                title: getTitle,
+                description: getDescription,
+                dueDate: getDueDate.toDateString(),
+                status: "pending", // default status
+            };
 
-        Alert.alert("Success", "Task added!");
-        navigator.goBack();
+            // get existing tasks
+            const storedTasks = await AsyncStorage.getItem("tasks");
+            const parsedTasks = storedTasks ? JSON.parse(storedTasks) : [];
+
+            // add new task
+            parsedTasks.push(newTask);
+
+            // save back
+            await AsyncStorage.setItem("tasks", JSON.stringify(parsedTasks));
+
+            Alert.alert("Success", "Task added!");
+            navigator.goBack();
+        } catch (error) {
+            console.error("Error saving task:", error);
+        }
     };
 
     return (
@@ -53,7 +73,7 @@ const AddTaskScreen = () => {
                         placeholder="Task Title"
                         placeholderTextColor="#fff"
                         style={styles.input}
-                        value={title}
+                        value={getTitle}
                         onChangeText={setTitle}
                     />
 
@@ -62,7 +82,7 @@ const AddTaskScreen = () => {
                         placeholder="Task Description"
                         placeholderTextColor="#fff"
                         style={[styles.input, { height: 100 }]}
-                        value={description}
+                        value={getDescription}
                         onChangeText={setDescription}
                         multiline
                     />
@@ -72,16 +92,16 @@ const AddTaskScreen = () => {
                         style={styles.input}
                         onPress={() => setShowDatePicker(true)}
                     >
-                        <Text style={{ color: dueDate ? "#fff" : "#ccc" }}>
-                            {dueDate
-                                ? dueDate.toDateString()
+                        <Text style={{ color: getDueDate ? "#fff" : "#ccc" }}>
+                            {getDueDate
+                                ? getDueDate.toDateString()
                                 : "Select Due Date"}
                         </Text>
                     </TouchableOpacity>
 
-                    {showDatePicker && (
+                    {getShowDatePicker && (
                         <DateTimePicker
-                            value={dueDate || new Date()}
+                            value={getDueDate || new Date()}
                             mode="date"
                             display="default"
                             onChange={(event, selectedDate) => {

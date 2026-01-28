@@ -14,18 +14,25 @@ import ViewTaskScreen from "./src/screens/ViewTaskScreen";
 import EditTaskScreen from "./src/screens/EditTaskScreen";
 import ProfileScreen from "./src/screens/ProfileScreen";
 
-// Define navigation param types
+export type Task = {
+  id: string;
+  title: string;
+  description: string;
+  dueDate: string;
+  status: "Pending"| "In Progress"| "Completed";
+};
+
 export type RootStackParamList = {
   Splash: undefined;
   SignIn: undefined;
   SignUp: undefined;
   Home: undefined;
   ForgotPassword: undefined;
-  VerificationCode: undefined;
-  ResetPassword: undefined;
+  VerificationCode: {email: String};
+  ResetPassword: {email: String};
   AddTask: undefined;
-  EditTask: { title : string, dueDate: string, description: string, status: string  };
-  ViewTask: { title : string, dueDate: string, description: string, status: string };
+  EditTask: { task: Task };  
+  ViewTask: { task: Task };
   Profile: undefined;
 };
 
@@ -36,7 +43,7 @@ export default function App() {
     <NavigationContainer>
       <Stack.Navigator
         initialRouteName="Splash"
-        screenOptions={{ headerShown: false }} // Hide headers for clean UI
+        screenOptions={{ headerShown: false }} // Hide headers
       >
         <Stack.Screen name="Splash" component={SplashScreen}/>
         <Stack.Screen name="SignIn" component={SignInScreen} />
@@ -44,7 +51,6 @@ export default function App() {
         <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
         <Stack.Screen name="VerificationCode" component={VerificationCodeScreen} />
         <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
-
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="AddTask" component={AddTaskScreen} />
         <Stack.Screen name="EditTask" component={EditTaskScreen} />

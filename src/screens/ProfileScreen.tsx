@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -18,20 +18,44 @@ import * as ImagePicker from "expo-image-picker";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useNavigation } from "@react-navigation/native";
 import { RootStackParamList } from "../../App";
+import { Dialog, ALERT_TYPE, Toast } from "react-native-alert-notification";
+import { RefreshControl } from "react-native-gesture-handler";
 
 type NavigationProps = NativeStackNavigationProp<RootStackParamList, "Home">;
 
 const ProfileScreen = () => {
   const navigator = useNavigation<NavigationProps>();
 
-  const [fullName, setFullName] = useState("John Doe");
-  const [email, setEmail] = useState("johndoe@example.com");
-  const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [imageUri, setImageUri] = useState<string | null>(null);
+  const [getName, setName] = useState("");
+  const [getEmail, setEmail] = useState("");
+  const [getPhone, setPhone] = useState("");
+  const [getImageUri, setImageUri] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const response = await fetch("https://2779e16733c2.ngrok-free.app/Tickr/LoadProfileData", {
+          method: "GET",
+          credentials: "include" // important for session cookies
+        });
+        const data = await response.json();
+        if (data.status) {
+          setName(data.name || "");
+          setEmail(data.email || "");
+          setPhone(data.phone || "");
+          setImageUri(data.profilePic || null);
+          console.log("Profile data loaded:", data);
+        } else {
+          Alert.alert("Error", data.message);
+        }
+      } catch (err) {
+        Alert.alert("Error", "Unable to load profile");
+      }
+    };
+
+    loadProfile();
+  }, []);
+
 
   const handlePickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -54,48 +78,31 @@ const ProfileScreen = () => {
     setImageUri(null);
   };
 
-  const handleSaveChanges = () => {
-    if (!fullName || !email) {
-      Alert.alert("Error", "Full Name and Email are required.");
-      return;
-    }
-    if (password && password !== confirmPassword) {
-      Alert.alert("Error", "Passwords do not match.");
-      return;
-    }
-    Alert.alert("Success", "Profile updated!");
-  };
 
-  const handleLogout = () => {
-    Alert.alert("Logout", "Are you sure you want to logout?", [
-      { text: "Cancel", style: "cancel" },
-      { text: "Logout", style: "destructive", onPress: () => navigator.replace("SignIn") },
-    ]);
-  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#2d1406" }}>
       <StatusBar barStyle="light-content"
-                backgroundColor="#2d1406"
-                translucent={true}/>
+        backgroundColor="#2d1406"
+        translucent={true} />
       <KeyboardAvoidingView
         style={styles.container}
-                        behavior={Platform.OS === "ios" ? "padding" : "height"}
-                        keyboardVerticalOffset={Platform.OS === "ios" ? 50 : 20}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 50 : 20}
       >
         <ScrollView contentContainerStyle={styles.scrollContainer}>
           {/* Profile Image */}
           <View style={styles.imageContainer}>
             <Image
-              source={imageUri ? { uri: imageUri } : require("../../assets/default-avatar.png")}
+              source={getImageUri ? { uri: getImageUri } : require("../../assets/default-avatar.png")}
               style={styles.profileImage}
             />
             <TouchableOpacity
               style={styles.imageAction}
-              onPress={imageUri ? handleRemoveImage : handlePickImage}
+              onPress={getImageUri ? handleRemoveImage : handlePickImage}
             >
               <Ionicons
-                name={imageUri ? "trash-outline" : "pencil-outline"}
+                name={getImageUri ? "trash-outline" : "pencil-outline"}
                 size={24}
                 color="#bd802e"
               />
@@ -107,8 +114,8 @@ const ProfileScreen = () => {
             placeholder="Full Name"
             placeholderTextColor="#fff"
             style={styles.input}
-            value={fullName}
-            onChangeText={setFullName}
+            value={getName}
+            onChangeText={setName}
           />
           <TextInput
             placeholder="Email"
@@ -116,7 +123,7 @@ const ProfileScreen = () => {
             style={styles.input}
             keyboardType="email-address"
             autoCapitalize="none"
-            value={email}
+            value={getEmail}
             onChangeText={setEmail}
           />
           <TextInput
@@ -124,46 +131,94 @@ const ProfileScreen = () => {
             placeholderTextColor="#fff"
             style={styles.input}
             keyboardType="phone-pad"
-            value={phone}
+            value={getPhone}
             onChangeText={setPhone}
           />
 
-          {/* Password */}
-          <View style={styles.passwordContainer}>
-            <TextInput
-              placeholder="Password"
-              placeholderTextColor="#fff"
-              style={styles.passwordInput}
-              secureTextEntry={!showPassword}
-              value={password}
-              onChangeText={setPassword}
-            />
-            <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
-              <Ionicons name={showPassword ? "eye-off" : "eye"} size={22} color="#fff" />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.passwordContainer}>
-            <TextInput
-              placeholder="Confirm Password"
-              placeholderTextColor="#fff"
-              style={styles.passwordInput}
-              secureTextEntry={!showConfirmPassword}
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-            />
-            <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)} style={styles.eyeIcon}>
-              <Ionicons name={showConfirmPassword ? "eye-off" : "eye"} size={22} color="#fff" />
-            </TouchableOpacity>
-          </View>
-
           {/* Save Changes Button */}
-          <TouchableOpacity style={styles.saveButton} onPress={handleSaveChanges}>
+          <TouchableOpacity style={styles.saveButton} onPress={async () => {
+
+            let formData = new FormData();
+            formData.append('name', getName);
+            formData.append('email', getEmail);
+            formData.append('phone', getPhone);
+
+            if (getImageUri) {
+              formData.append('profileImage', {
+                uri: getImageUri,
+                name: 'profile.jpg',
+                type: 'image/jpeg',
+              } as any);
+            }
+
+            const response = await fetch('https://2779e16733c2.ngrok-free.app/Tickr/UpdateProfile', {
+              method: 'POST',
+              body: formData,
+              headers: {
+                'Content-Type': 'multipart/form-data',
+              }
+            });
+
+            if (response.ok) {
+              const json = await response.json();
+              if (json.status) {
+                Toast.show({
+                  type: ALERT_TYPE.SUCCESS,
+                  title: 'Success',
+                  textBody: json.message,
+                  onHide: () => { navigator.replace("Profile"); }
+                });
+              } else {
+                Dialog.show({
+                  type: ALERT_TYPE.DANGER,
+                  title: 'ERROR',
+                  textBody: json.message,
+                  button: 'close',
+                });
+              }
+            } else {
+              Dialog.show({
+                type: ALERT_TYPE.DANGER,
+                title: 'ERROR',
+                textBody: 'Failed to update account',
+                button: 'close',
+              });
+            }
+          }}>
             <Text style={styles.buttonText}>Save Changes</Text>
           </TouchableOpacity>
 
           {/* Logout Button */}
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <TouchableOpacity style={styles.logoutButton} onPress={async () => {
+            try {
+              console.log("Logging out...");
+              const response = await fetch("https://2779e16733c2.ngrok-free.app/Tickr/LogOut", {
+                method: "GET",
+                credentials: 'include',
+              });
+
+              if (response.ok) {
+                Toast.show({
+                  type: ALERT_TYPE.SUCCESS,
+                  title: 'Success',
+                  textBody: "Logged out successfully",
+                  autoClose: 1000
+
+                });
+                navigator.replace("SignIn");
+              } else {
+                Dialog.show({
+                  type: ALERT_TYPE.DANGER,
+                  title: 'ERROR',
+                  textBody: 'logout failed',
+                  button: 'close',
+                });
+              }
+            } catch (error) {
+              console.error("Error:", error);
+            }
+          }}
+          >
             <Text style={styles.buttonText}>Logout</Text>
           </TouchableOpacity>
         </ScrollView>
@@ -175,18 +230,18 @@ const ProfileScreen = () => {
 export default ProfileScreen;
 
 const styles = StyleSheet.create({
-  
+
   container: {
-        flex: 1,
-        backgroundColor: "#2d1406",
-    },
-    scrollContainer: {
-        flexGrow: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        padding: 20,
-        paddingBottom: 10,
-    },
+    flex: 1,
+    backgroundColor: "#2d1406",
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+    paddingBottom: 10,
+  },
   imageContainer: {
     position: "relative",
     marginBottom: 30,

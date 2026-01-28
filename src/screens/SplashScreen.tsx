@@ -22,7 +22,7 @@ export default function SplashScreen () {
   useEffect(() => {
     const timer = setTimeout(() => {
       navigator.replace("SignIn");
-    }, 9500); // 9.5s splash
+    }, 6500);
     return () => clearTimeout(timer);
   }, [navigator]);
 
